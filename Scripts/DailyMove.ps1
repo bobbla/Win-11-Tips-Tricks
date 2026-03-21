@@ -25,13 +25,11 @@ $LogFolder = "E:\Scripts\Logs\RealAICountryMusic"
 $Timestamp = Get-Date -Format "yyyy-MM-dd"
 $LogFile = Join-Path $LogFolder "DailyMove_$Timestamp.log"
 
-# Ensure log folder exists
-if (-not (Test-Path $LogFolder)) {
+if (-not (Test-Path -LiteralPath $LogFolder)) {
     New-Item -ItemType Directory -Path $LogFolder -Force | Out-Null
 }
 
-# Remove logs older than 30 days
-Get-ChildItem -Path $LogFolder -Filter "*.log" -ErrorAction SilentlyContinue |
+Get-ChildItem -LiteralPath $LogFolder -Filter "*.log" -ErrorAction SilentlyContinue |
     Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } |
     Remove-Item -Force -ErrorAction SilentlyContinue
 
@@ -53,20 +51,17 @@ foreach ($job in $Jobs) {
     Write-Host "Processing source: $Source"
     Write-Host "Destination: $Destination"
 
-    # Ensure source folder exists
-    if (-not (Test-Path $Source)) {
+    if (-not (Test-Path -LiteralPath $Source)) {
         Write-Warning "Source folder not found: $Source"
         continue
     }
 
-    # Ensure destination folder exists
-    if (-not (Test-Path $Destination)) {
+    if (-not (Test-Path -LiteralPath $Destination)) {
         New-Item -ItemType Directory -Path $Destination -Force | Out-Null
         Write-Host "Created destination folder."
     }
 
-    # Get files only - this keeps the source folders intact
-    $Files = Get-ChildItem -Path $Source -File -ErrorAction SilentlyContinue
+    $Files = Get-ChildItem -LiteralPath $Source -File -ErrorAction SilentlyContinue
 
     if (-not $Files) {
         Write-Host "No files found in source."
@@ -75,7 +70,7 @@ foreach ($job in $Jobs) {
 
     foreach ($File in $Files) {
         try {
-            Move-Item -Path $File.FullName -Destination $Destination -Force -ErrorAction Stop
+            Move-Item -LiteralPath $File.FullName -Destination $Destination -Force -ErrorAction Stop
             $MovedCount++
             $TotalMoved++
             Write-Host "Moved: $($File.Name)"
