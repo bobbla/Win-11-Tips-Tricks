@@ -19,10 +19,10 @@ $Jobs = @(
 )
 
 # -----------------------------
-# Logging Setup (Timestamped)
+# Logging setup
 # -----------------------------
 $LogFolder = "E:\Scripts\Logs\RealAICountryMusic"
-$Timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
+$Timestamp = Get-Date -Format "yyyy-MM-dd"
 $LogFile = Join-Path $LogFolder "DailyMove_$Timestamp.log"
 
 # Ensure log folder exists
@@ -30,12 +30,12 @@ if (-not (Test-Path $LogFolder)) {
     New-Item -ItemType Directory -Path $LogFolder -Force | Out-Null
 }
 
-# Cleanup old logs (30 days)
+# Remove logs older than 30 days
 Get-ChildItem -Path $LogFolder -Filter "*.log" -ErrorAction SilentlyContinue |
     Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } |
     Remove-Item -Force -ErrorAction SilentlyContinue
 
-Start-Transcript -Path $LogFile
+Start-Transcript -Path $LogFile -Append
 
 Write-Host "========================================"
 Write-Host " Daily File Move Started"
@@ -45,7 +45,6 @@ Write-Host "========================================"
 $TotalMoved = 0
 
 foreach ($job in $Jobs) {
-
     $Source = $job.Source
     $Destination = $job.Destination
     $MovedCount = 0
@@ -54,18 +53,19 @@ foreach ($job in $Jobs) {
     Write-Host "Processing source: $Source"
     Write-Host "Destination: $Destination"
 
+    # Ensure source folder exists
     if (-not (Test-Path $Source)) {
         Write-Warning "Source folder not found: $Source"
         continue
     }
 
-    # Ensure destination exists
+    # Ensure destination folder exists
     if (-not (Test-Path $Destination)) {
         New-Item -ItemType Directory -Path $Destination -Force | Out-Null
         Write-Host "Created destination folder."
     }
 
-    # Get files
+    # Get files only - this keeps the source folders intact
     $Files = Get-ChildItem -Path $Source -File -ErrorAction SilentlyContinue
 
     if (-not $Files) {
@@ -78,9 +78,11 @@ foreach ($job in $Jobs) {
             Move-Item -Path $File.FullName -Destination $Destination -Force -ErrorAction Stop
             $MovedCount++
             $TotalMoved++
+            Write-Host "Moved: $($File.Name)"
         }
         catch {
             Write-Warning "Failed to move file: $($File.FullName)"
+            Write-Warning "Reason: $($_.Exception.Message)"
         }
     }
 
