@@ -70,10 +70,25 @@ foreach ($job in $Jobs) {
 
     foreach ($File in $Files) {
         try {
-            Move-Item -LiteralPath $File.FullName -Destination $Destination -Force -ErrorAction Stop
+            $BaseName = [System.IO.Path]::GetFileNameWithoutExtension($File.Name)
+            $Extension = $File.Extension
+            $DestinationPath = Join-Path $Destination $File.Name
+
+            $Counter = 1
+
+            # Check for duplicates and generate new name
+            while (Test-Path -LiteralPath $DestinationPath) {
+                $NewName = "{0}_{1}{2}" -f $BaseName, $Counter, $Extension
+                $DestinationPath = Join-Path $Destination $NewName
+                $Counter++
+            }
+
+            Move-Item -LiteralPath $File.FullName -Destination $DestinationPath -ErrorAction Stop
+
             $MovedCount++
             $TotalMoved++
-            Write-Host "Moved: $($File.Name)"
+
+            Write-Host "Moved: $($File.Name) -> $(Split-Path $DestinationPath -Leaf)"
         }
         catch {
             Write-Warning "Failed to move file: $($File.FullName)"
